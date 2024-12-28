@@ -3,3 +3,7 @@
 *.pdf
 *.pptx
 *.docx
+
+# Videos
+
+*.mp4
