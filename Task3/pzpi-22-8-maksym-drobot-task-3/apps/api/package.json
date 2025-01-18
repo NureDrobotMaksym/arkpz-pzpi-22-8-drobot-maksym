@@ -1,0 +1,32 @@
+{
+  "name": "@repo/api",
+  "dependencies": {
+    "swagger-ui-express": "^4.6.3",
+    "jsonwebtoken": "^9.0.2",
+    "express": "^4.21.2",
+    "bcryptjs": "^2.4.3",
+    "mqtt": "^5.10.3",
+    "cors": "^2.8.5",
+    "zod": "^3.24.1",
+    "postgres": "^3.4.5",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "dotenv": "^16.4.7",
+    "winston": "^3.17.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "@types/cors": "^2.8.17",
+    "@types/node": "^20.10.0",
+    "@types/morgan": "^1.9.9",
+    "@types/express": "^5.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/swagger-ui-express": "^4.1.7"
+  },
+  "scripts": {
+    "dev": "ts-node -r tsconfig-paths/register ./src/commands/default-command.ts",
+    "migrate": "ts-node -r tsconfig-paths/register ./src/commands/migrate-command.ts"
+  }
+}

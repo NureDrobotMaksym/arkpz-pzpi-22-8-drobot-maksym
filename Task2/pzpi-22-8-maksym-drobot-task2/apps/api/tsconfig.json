@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleDetection": "force",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "target": "esnext",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"],
+  "files": ["./express-env.d.ts"]
+}

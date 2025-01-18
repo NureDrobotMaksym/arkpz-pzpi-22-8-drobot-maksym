@@ -1,0 +1,1112 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API",
+    "version": "1.0.0",
+    "description": "API для роботи з програмною системою для контролю доступу на підприємствах"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Checks the health status of the API.",
+        "responses": {
+          "200": {
+            "description": "API is healthy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "healthy"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/sign-up": {
+      "post": {
+        "summary": "User Sign-Up",
+        "description": "Registers a new user in the system.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "john.doe@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "password123"
+                  }
+                },
+                "required": ["name", "email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User successfully registered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "12345"
+                    },
+                    "accessToken": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or user already exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "A validation error occurred."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "An error occurred trying to create user."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/sign-in": {
+      "post": {
+        "summary": "User Sign-In",
+        "description": "Authenticates a user and returns an access token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "john.doe@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "password123"
+                  }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User successfully authenticated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "12345"
+                    },
+                    "accessToken": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Invalid credentials."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "User does not exist."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "An unexpected error occurred."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cluster": {
+      "post": {
+        "summary": "Create Cluster",
+        "description": "Creates a new cluster in the system.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Cluster Alpha"
+                  },
+                  "location": {
+                    "type": "string",
+                    "example": "New York, USA"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "This is a test cluster."
+                  }
+                },
+                "required": ["name", "location", "description"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cluster successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "12345"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Validation failed for request body."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get All Clusters",
+        "description": "Retrieves a list of all clusters in the system.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of clusters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "example": "12345"
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Cluster Alpha"
+                      },
+                      "location": {
+                        "type": "string",
+                        "example": "New York, USA"
+                      },
+                      "description": {
+                        "type": "string",
+                        "example": "This is a test cluster."
+                      },
+                      "operational": {
+                        "type": "boolean",
+                        "example": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Failed to retrieve clusters."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cluster/{id}": {
+      "put": {
+        "summary": "Update Cluster",
+        "description": "Updates the details of an existing cluster.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "12345"
+            },
+            "description": "ID of the cluster to update."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Updated Cluster Alpha"
+                  },
+                  "location": {
+                    "type": "string",
+                    "example": "San Francisco, USA"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Updated description for the cluster."
+                  },
+                  "operational": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                },
+                "required": ["name", "location", "description", "operational"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cluster successfully updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid ID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Validation failed for request body or cluster ID."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cluster not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Cluster does not exist."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Cluster",
+        "description": "Deletes a cluster by ID.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "12345"
+            },
+            "description": "ID of the cluster to delete."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cluster successfully deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid ID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Validation failed for cluster ID."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cluster not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Cluster does not exist."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/event": {
+      "post": {
+        "summary": "Create Event",
+        "description": "Creates a new event for a specific lock.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "access_granted"
+                  },
+                  "lock_id": {
+                    "type": "string",
+                    "example": "1"
+                  }
+                },
+                "required": ["type", "lock_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Event successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or lock not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Validation failed or lock does not exist."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/event/{id}": {
+      "get": {
+        "summary": "Get Event by ID",
+        "description": "Retrieves details of a specific event by its ID.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "7"
+            },
+            "description": "ID of the event to retrieve."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event details retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "7"
+                    },
+                    "type": {
+                      "type": "string",
+                      "example": "access_granted"
+                    },
+                    "lock_id": {
+                      "type": "string",
+                      "example": "7"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2025-01-18T15:30:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or event not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Validation failed or event does not exist."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/event/lock/{id}": {
+      "get": {
+        "summary": "Get All Events for a Lock",
+        "description": "Retrieves all events for a specific lock by its ID.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "7"
+            },
+            "description": "ID of the lock to retrieve events for."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of events retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "example": "1"
+                      },
+                      "type": {
+                        "type": "string",
+                        "example": "temperature_change"
+                      },
+                      "lock_id": {
+                        "type": "string",
+                        "example": "7"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-01-18T15:30:00Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or lock not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Validation failed or lock does not exist."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lock": {
+      "post": {
+        "summary": "Create a new lock",
+        "operationId": "createLock",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Lock data to be created",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Lock 1"
+                  },
+                  "cluster_id": {
+                    "type": "string",
+                    "example": "12345"
+                  }
+                },
+                "required": ["name", "cluster_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lock successfully created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "67890"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data"
+          }
+        }
+      }
+    },
+    "/lock/{id}": {
+      "put": {
+        "summary": "Update an existing lock",
+        "operationId": "updateLock",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Lock ID",
+            "schema": {
+              "type": "string",
+              "example": "67890"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Updated lock data",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Updated Lock"
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lock successfully updated"
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "404": {
+            "description": "Lock not found"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get a lock by ID",
+        "operationId": "getLock",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Lock ID",
+            "schema": {
+              "type": "string",
+              "example": "67890"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lock details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "67890"
+                    },
+                    "name": {
+                      "type": "string",
+                      "example": "Lock 1"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lock not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a lock by ID",
+        "operationId": "deleteLock",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Lock ID",
+            "schema": {
+              "type": "string",
+              "example": "67890"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lock successfully deleted"
+          },
+          "404": {
+            "description": "Lock not found"
+          }
+        }
+      }
+    },
+    "/lock/cluster/{id}": {
+      "get": {
+        "summary": "Get all locks in a cluster",
+        "operationId": "getAllLocks",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Cluster ID",
+            "schema": {
+              "type": "string",
+              "example": "12345"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of locks in the cluster",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "example": "67890"
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Lock 1"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cluster not found"
+          }
+        }
+      }
+    },
+    "/user/{id}": {
+      "put": {
+        "summary": "Update a user",
+        "operationId": "updateUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "User ID",
+            "schema": {
+              "type": "string",
+              "example": "12345"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Updated user data",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Updated user description"
+                  }
+                },
+                "required": ["name", "description"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User successfully updated"
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a user",
+        "operationId": "deleteUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "User ID",
+            "schema": {
+              "type": "string",
+              "example": "12345"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User successfully deleted"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/user": {
+      "get": {
+        "summary": "Get all users",
+        "operationId": "getAllUsers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "example": "12345"
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                      },
+                      "description": {
+                        "type": "string",
+                        "example": "A user in the system"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access"
+          }
+        }
+      }
+    }
+  }
+}

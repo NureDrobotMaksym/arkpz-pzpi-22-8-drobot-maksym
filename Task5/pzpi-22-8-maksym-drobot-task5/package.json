@@ -1,0 +1,16 @@
+{
+  "name": "repo",
+  "scripts": {
+    "dev": "pnpm run -r dev",
+    "build": "pnpm run -r build",
+    "dev:api": "pnpm run --filter=@repo/api dev",
+    "dev:app": "pnpm run --filter=@repo/app dev",
+    "dev:iot": "pnpm run --filter=@repo/iot dev",
+    "dev:www": "pnpm run --filter=@repo/www dev",
+    "build:api": "pnpm run --filter=@repo/api build",
+    "build:app": "pnpm run --filter=@repo/app build",
+    "build:iot": "pnpm run --filter=@repo/iot build",
+    "build:www": "pnpm run --filter=@repo/www build",
+    "migrate": "pnpm run --filter=@repo/api migrate"
+  }
+}

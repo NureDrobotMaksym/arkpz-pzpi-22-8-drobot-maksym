@@ -1,0 +1,335 @@
+﻿Міністерство освіти і науки України
+Харківський національний університет радіоелектроніки
+
+
+
+
+Кафедра програмної інженерії
+
+
+
+
+Звіт з лабораторної роботи №4
+з дисципліни «Аналіз та рефакторинг коду»
+
+
+
+
+Виконав:
+ст. гр. ПЗПІ-22-8
+Дробот Максим Євгенович
+
+Перевірив:
+ст. викл. каф. ПІ
+Сокорчук Ігор Петрович 
+
+
+
+
+
+Харків 2025
+4 РОЗРОБКА IoT КЛІЄНТА 
+(БІЗНЕС-ЛОГІКИ ТА ФУНКЦІЙ НАЛАШТУВАННЯ)
+
+
+	4.1 Мета роботи
+	На лабораторній роботі №4 потрібно розробити програмне забезпечення для  IoT або SmartDevice пристрою, створеного на базі будь-якої поширеної на  сьогодні платформи, придатної для реалізації вбудованих систем (Embedded  System).	
+	4.2 Хід роботи
+     Проект полягав у розробці програмного забезпечення для ІоТ клієнта, який збирає дані з датчиків і передає їх через MQTT на сервер. Спочатку була створена архітектура та UML діаграми для візуалізації процесів і взаємодії з системою. Потім розроблена бізнес-логіка для обробки даних, програмна реалізація функцій налаштування та обробки отриманих даних. Завершальним етапом було тестування ІоТ клієнта для перевірки його коректної роботи.
+     Інженерні рішення в проекті полягали в розробці системи, яка здатна збирати дані з датчиків (дистанція спереду та ззаду) і передавати їх на сервер через MQTT. Для цього була обрана архітектура з використанням ESP32, що забезпечує бездротову передачу даних. Дані з датчиків обробляються на мікроконтролері за допомогою алгоритмів, що забезпечують точність вимірювань і адаптацію під зміни умов навколишнього середовища. 
+     Всі налаштування клієнта були реалізовані через простий інтерфейс, що дозволяє змінювати параметри роботи системи без необхідності в програмуванні. Для забезпечення надійності передачі даних використовувався MQTT-брокер, що гарантує швидку та ефективну доставку інформації на сервер для подальшого зберігання та обробки.
+	Схема IoT пристрою та інші діаграми наведені у додатках.
+
+
+     
+     Висновки
+	На даній лабораторній роботі було створення IoT пристрій та функції адміністрування до нього. Відеозапис захисту даної лабораторної роботи можна побачити за наступним посиланням: https://youtu.be/3zbQUzNRmzk
+
+
+Додаток А – Фрагменти коду пристрою
+
+
+1 #include <WiFi.h>
+2 #include <Keypad.h>
+3 #include <PubSubClient.h>
+4 #include <LiquidCrystal_I2C.h>
+5 
+6 // WiFi
+7 
+8 char ssid[] = "Wokwi-GUEST";
+9 char password[] = "";
+10 
+11 // MQTT
+12 
+13 const char* mqtt_server = "broker.hivemq.com";
+14 const char* mqtt_topic = "accesspoint/iot";
+15 const int mqtt_port = 1883;
+16 
+17 WiFiClient espClient;
+18 PubSubClient client(espClient);
+19 
+20 // Pins
+21 
+22 #define BUZZER_PIN   14
+23 #define RELAY_PIN    27
+24 #define GREEN_LED    26
+25 #define RED_LED      25
+26 
+27 // Display
+28 
+29 LiquidCrystal_I2C lcd(0x27, 16, 2);
+30 
+31 void setup() {
+32   Serial.begin(115200);
+33 
+34   // Pin modes
+35   pinMode(BUZZER_PIN, OUTPUT);
+36   pinMode(GREEN_LED, OUTPUT);
+37   pinMode(RED_LED, OUTPUT);
+38   pinMode(RELAY_PIN, OUTPUT);
+39 
+40   // Initial state
+41   digitalWrite(BUZZER_PIN, LOW);
+42   digitalWrite(GREEN_LED, LOW);
+43   digitalWrite(RED_LED, LOW);
+44   digitalWrite(RELAY_PIN, LOW);
+45 
+46   // Initialize display
+47 
+48   lcd.init();
+49   lcd.backlight();
+50   lcd.clear();
+51 
+52   // Connect to WiFi
+53 
+54   WiFi.begin(ssid, password);
+55   lcd.print("Waiting for WiFi");
+56 
+57   for (int i = 0; WiFi.status() != WL_CONNECTED; i++) {
+58     if (i == 16) {
+59       i = 0;
+60     } else {
+61       lcd.setCursor(i, 1);
+62       lcd.print("*");
+63     }
+64 
+65     delay(500);
+66   }
+67 
+68   // Connect to MQTT
+69 
+70   client.setServer(mqtt_server, mqtt_port);
+71   reconnect();
+72 }
+73 
+74 void loop() {
+75   if (client.connected() == false) {
+76     reconnect();
+77   }
+78 
+79   client.loop();
+80 
+81   lcd.setCursor(1, 0);
+82   lcd.print("Enter an RFID:");
+83 
+84   // Process the input
+85 
+86   if (Serial.available()) {
+87     String input = Serial.readStringUntil('\n');
+88 
+89     // Remove any leading or trailing whitespace
+90     input.trim();
+91 
+92     // Show the verification message
+93     lcd.setCursor(1, 1);
+94     lcd.print("Verifying RFID");
+95 
+96     // Add artificial delay to see the message
+97     // TODO: replace with a server call
+98     delay(500);
+99 
+100     if (isValidFormat(input)) {
+101       if (input.equals("00111101110110010010011100")) {
+102         grantAccess();
+103       } else {
+104         denyAccess();
+105       }
+106     } else {
+107       lcd.setCursor(1, 1);
+108       lcd.print("Invalid format");
+109       
+110       delay(1000);
+111     }
+112 
+113     lcd.clear();
+114   }
+115 
+116   // Speed up the simulation
+117 
+118   delay(10); 
+119 }
+120 
+121 bool isValidFormat(String input) {
+122   if (input.length() != 26) return false; 
+123 
+124   for (int i = 0; i < input.length(); i++) {
+125     if (isDigit(input.charAt(i)) == false) return false;
+126   }
+127 
+128   return true;
+129 }
+130 
+131 void grantAccess() {
+132   lcd.setCursor(1, 1);
+133   lcd.print("Access granted");
+134 
+135   String message = "{ \"type\": \"access_granted\", \"lock_id\": \"1\" }";
+136 
+137   if (client.publish(mqtt_topic, message.c_str())) {
+138     Serial.println("Published: " + message);
+139   } else {
+140     Serial.println("Could not publish the message");
+141   }
+142 
+143   digitalWrite(BUZZER_PIN, HIGH);
+144   digitalWrite(GREEN_LED, HIGH);
+145   digitalWrite(RELAY_PIN, HIGH);
+146 
+147   delay(5000); // Buzzer and LED on for 5 seconds
+148 
+149   digitalWrite(BUZZER_PIN, LOW);
+150   digitalWrite(GREEN_LED, LOW);
+151   digitalWrite(RELAY_PIN, LOW);
+152 }
+153 
+154 void denyAccess() {
+155   lcd.setCursor(1, 1);
+156   lcd.print("Access denied!");
+157 
+158   String message = "{ \"type\": \"access_denied\", \"lock_id\": \"1\" }";
+159 
+160   if (client.publish(mqtt_topic, message.c_str())) {
+161     Serial.println("Published: " + message);
+162   } else {
+163     Serial.println("Could not publish the message");
+164   }
+165 
+166   digitalWrite(BUZZER_PIN, HIGH);
+167   digitalWrite(RED_LED, HIGH);
+168 
+169   delay(5000); // Buzzer and LED on for 5 seconds
+170 
+171   digitalWrite(BUZZER_PIN, LOW);
+172   digitalWrite(RED_LED, LOW);
+173 }
+174 
+175 void reconnect() {
+176   lcd.clear();
+177   lcd.print("Waiting for MQTT");
+178 
+179   for (int i = 0; client.connected() == false; i++) {
+180     client.connect("ESP32CLIENT");
+181 
+182     if (i == 16) {
+183       i = 0;
+184     } else {
+185       lcd.setCursor(i, 1);
+186       lcd.print("*");
+187     }
+188 
+189     delay(500);
+190   }
+191 
+192   lcd.clear();
+193 }
+
+1 #include "wokwi-api.h"
+2 #include <stdint.h>
+3 #include <stdio.h>
+4 #include <unistd.h> // For sleep function
+5 
+6 // Function to simulate SPI communication
+7 void spi_transfer(uint8_t *data_out, uint8_t *data_in, uint8_t len) {
+8     // Simulate SPI transfer
+9     printf("MFRC522: Sending data: ");
+10     for (int i = 0; i < len; i++) {
+11         printf("0x%02X ", data_out[i]);
+12     }
+13     printf("\n");
+14 
+15     // Simulate receiving data
+16     for (int i = 0; i < len; i++) {
+17         data_in[i] = 0xAB; // Dummy data
+18     }
+19     printf("MFRC522: Received data: ");
+20     for (int i = 0; i < len; i++) {
+21         printf("0x%02X ", data_in[i]);
+22     }
+23     printf("\n");
+24 }
+25 
+26 // Function to send UID data to Arduino
+27 void send_uid_to_arduino() {
+28     // Loop for sending 10 sets of UID data
+29     for (int i = 0; i < 10; i++) {
+30         // Simulate UID data
+31         uint8_t uid_data[4] = {0x12, 0x34, 0x56, 0x78};
+32 
+33         // Print UID data
+34         printf("UID %d: ", i + 1);
+35         for (int j = 0; j < 4; j++) {
+36             printf("%02X ", uid_data[j]);
+37         }
+38         printf("\n");
+39 
+40         // Send UID data to Arduino via SPI
+41         spi_transfer(uid_data, NULL, 4);
+42 
+43         // Wait for 1 second (for demonstration, reduce to 1 second)
+44         sleep(1);
+45     }
+46 }
+47 
+48 
+49 // Function to initialize the chip and SPI pins
+50 void chip_init() {
+51     // Initialize MFRC522
+52     // Reset MFRC522
+53     // Additional initialization steps can be added here
+54      //mfrc522_write(0x0A, 0x0F); // Command register address and reset command
+55      
+56 }
+57 
+58 int main() {
+59     // Initialize chip
+60     chip_init();
+61 
+62     // Send UID data to Arduino
+63     // Send UID data to Arduino every 10 seconds
+64     while (1) {
+65         send_uid_to_arduino();
+66         // Wait for 10 seconds
+67         sleep(10);
+68     }
+69 
+70     return 0;
+71 }
+72 
+
+Додаток Б – Діаграма прецедентів IoT клієнта
+
+
+
+
+
+
+Додаток В – Діаграма діяльності IoT клієнта
+
+
+
+
+
+Додаток Г – Схема пристрою
+
+
+

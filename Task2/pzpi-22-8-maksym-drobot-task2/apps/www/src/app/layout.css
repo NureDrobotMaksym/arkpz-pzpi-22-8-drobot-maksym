@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    .light {
+        --background: 0 0% 100%;
+        --foreground: 20 14.3% 4.1%;
+
+        --solid-background: 24.6 95% 53.1%;
+        --solid-foreground: 60 9.1% 97.8%;
+
+        --light-background: 60 4.8% 95.9%;
+        --light-foreground: 24 9.8% 10%;
+
+        --muted-background: 60 4.8% 95.9%;
+        --muted-foreground: 25 5.3% 44.7%;
+
+        --focus-background: 60 4.8% 95.9%;
+        --focus-foreground: 24 9.8% 10%;
+
+        --error-background: 0 84.2% 60.2%;
+        --error-foreground: 60 9.1% 97.8%;
+
+        --border: 20 5.9% 90%;
+        --ring: 24.6 95% 53.1%;
+    }
+
+    .dark {
+        --background: 20 14.3% 4.1%;
+        --foreground: 60 9.1% 97.8%;
+
+        --solid-background: 20.5 90.2% 48.2%;
+        --solid-foreground: 60 9.1% 97.8%;
+
+        --light-background: 12 6.5% 15.1%;
+        --light-foreground: 60 9.1% 97.8%;
+
+        --muted-background: 12 6.5% 15.1%;
+        --muted-foreground: 24 5.4% 63.9%;
+
+        --focus-background: 12 6.5% 15.1%;
+        --focus-foreground: 60 9.1% 97.8%;
+
+        --error-background: 0 72.2% 50.6%;
+        --error-foreground: 60 9.1% 97.8%;
+
+        --border: 12 6.5% 15.1%;
+        --ring: 20.5 90.2% 48.2%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-default ring-default;
+    }
+
+    html,
+    body {
+        @apply w-full h-full;
+    }
+
+    body {
+        @apply bg-background text-foreground font-default antialiased selection:bg-foreground selection:text-background;
+    }
+}

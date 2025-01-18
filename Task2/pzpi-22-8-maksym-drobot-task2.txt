@@ -1,0 +1,307 @@
+﻿Міністерство освіти і науки України
+Харківський національний університет радіоелектроніки
+
+
+
+
+Кафедра програмної інженерії
+
+
+
+
+Звіт з лабораторної роботи №2
+з дисципліни «Аналіз та рефакторинг коду»
+
+
+
+
+Виконав:
+ст. гр. ПЗПІ-22-8
+Дробот Максим Євгенович
+
+Перевірив:
+ст. викл. каф. ПІ
+Сокорчук Ігор Петрович 
+
+
+
+
+
+Харків 2025
+2 РОЗРОБКА БАЗИ ДАНИХ ДЛЯ СЕРВЕРНОЇ ЧАСТИНИ ПРОГРАМНОЇ СИСТЕМИ ТА ПРИКЛАДНОГО ПРОГРАМНОГО ІНТЕРФЕЙСУ (API)
+
+
+	2.1 Мета роботи
+	Розробити базу даних для серверної частини  програмної системи та прикладного програмного інтерфейсу.
+	2.2 Хід роботи
+	Створимо UML-діаграму прецедентів для серверної частини системи.
+
+
+Рисунок 2.1 – Діаграма прецедентів
+
+	Створимо Entity-Relations (ER) діаграму.
+
+
+Рисунок 2.2 – ER діаграма бази даних
+
+     Розробимо базу даних (БД) на основі наданих діаграм. Створимо два переліки, функцію для автоматичного змінення поля updated_at, таблиці та тригери для таблиць.
+     
+1 -- Enums
+2 
+3 DO $$
+4 BEGIN
+5     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role') THEN
+6         CREATE TYPE "role" AS ENUM ('user', 'admin');
+7     END IF;
+8 END $$;
+9 
+10 DO $$
+11 BEGIN
+12     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'event_type') THEN
+13         CREATE TYPE "event_type" AS ENUM ('access_granted', 'access_denied');
+14     END IF;
+15 END $$;
+16 
+17 -- Functions
+18 
+19 CREATE OR REPLACE FUNCTION update_timestamp()
+20     RETURNS TRIGGER AS $$
+21 BEGIN
+22     NEW.updated_at = now();
+23     RETURN NEW;
+24 END;
+25 $$ LANGUAGE plpgsql;
+26 
+27 -- Table
+28 
+29 CREATE TABLE IF NOT EXISTS users
+30 (
+31     "id" SERIAL PRIMARY KEY NOT NULL,
+32     "role" "role" DEFAULT 'user',
+33     "name" VARCHAR(255) NOT NULL,
+34     "email" VARCHAR(255) UNIQUE,
+35     "password" VARCHAR(255) NOT NULL,
+36     "description" VARCHAR(255),
+37     "created_at" TIMESTAMP WITH TIME ZONE DEFAULT now(),
+38     "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT now()
+39 );
+40 
+41 CREATE TABLE IF NOT EXISTS clusters
+42 (
+43     "id" SERIAL PRIMARY KEY NOT NULL,
+44     "name" VARCHAR(255) NOT NULL,
+45     "location" VARCHAR(255) NOT NULL,
+46     "description" VARCHAR(255) NOT NULL,
+47     "operational" BOOLEAN DEFAULT TRUE,
+48     "created_at" TIMESTAMP WITH TIME ZONE DEFAULT now(),
+49     "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT now(),
+50     "user_id" INTEGER,
+51     FOREIGN KEY ("user_id") REFERENCES users("id") ON DELETE CASCADE ON UPDATE CASCADE
+52 );
+53 
+54 CREATE TABLE IF NOT EXISTS locks
+55 (
+56     "id" SERIAL PRIMARY KEY NOT NULL,
+57     "name" VARCHAR(255) NOT NULL,
+58     "created_at" TIMESTAMP WITH TIME ZONE DEFAULT now(),
+59     "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT now(),
+60     "cluster_id" INTEGER,
+61     "user_id" INTEGER,
+62     FOREIGN KEY ("cluster_id") REFERENCES clusters("id") ON DELETE CASCADE ON UPDATE CASCADE,
+63     FOREIGN KEY ("user_id") REFERENCES users("id") ON DELETE CASCADE ON UPDATE CASCADE
+64 );
+65 
+66 -- Events are immutable
+67 
+68 CREATE TABLE IF NOT EXISTS events
+69 (
+70     "id" SERIAL PRIMARY KEY NOT NULL,
+71     "type" "event_type",
+72     "created_at" TIMESTAMP WITH TIME ZONE DEFAULT now(),
+73     "lock_id" INTEGER,
+74     "user_id" INTEGER,
+75     FOREIGN KEY ("lock_id") REFERENCES locks("id") ON DELETE SET NULL ON UPDATE CASCADE,
+76     FOREIGN KEY ("user_id") REFERENCES users("id") ON DELETE SET NULL ON UPDATE CASCADE
+77 );
+78 
+79 -- Add triggers to automatically update the updated_at column
+80 
+81 CREATE TRIGGER set_updated_at_users
+82     BEFORE UPDATE ON users
+83     FOR EACH ROW
+84 EXECUTE FUNCTION update_timestamp();
+85 
+86 CREATE TRIGGER set_updated_at_locks
+87     BEFORE UPDATE ON locks
+88     FOR EACH ROW
+89 EXECUTE FUNCTION update_timestamp();
+90 
+91 CREATE TRIGGER set_updated_at_clusters
+92     BEFORE UPDATE ON clusters
+93     FOR EACH ROW
+94 EXECUTE FUNCTION update_timestamp();
+95
+
+	Створимо діаграму структури бази даних.
+
+	
+Рисунок 2.3 – Діаграма структури бази даних
+
+	Розробимо функції для роботи з базою даних. Наведемо їх у додатку Б. Розробимо API. Наведемо розроблені функції у додатку А. Створимо програмну реалізацію API.
+Висновки
+     На даній лабораторній роботі ми розробили систему авторизації для програмного продукту, а також базу даних для серверної частини.
+     Відеозапис захисту даної лабораторної роботи можна переглянути за наступним посиланням: https://youtu.be/lCoRP6V3i20.
+
+
+Додаток А – Функції для роботи з БД
+
+
+1 import Repository from "@/repository";
+2 
+3 export default class UserRepository extends Repository {
+4   public async createUser(name: string, email: string, password: string) {
+5     const user = await this.database`
+6         insert into users
+7             (name, email, password)
+8         values (${name}, ${email}, ${password}) returning "id", "role"
+9     `;
+10 
+11     return user.at(0);
+12   }
+13 
+14   public async updateUser(id: number, name: string, description: string | undefined) {
+15     if (description) {
+16       return this.database`
+17         update users
+18         set name = ${name}, description = ${description}
+19         where id = ${id}
+20       `;
+21     } else {
+22       return this.database`
+23         update users
+24         set name = ${name}
+25         where id = ${id}
+26       `;
+27     }
+28   }
+29 
+30   public async deleteUser(id: number) {
+31     return this.database`
+32         delete
+33         from users
+34         where id = ${id}
+35     `;
+36   }
+37 
+38   public async findUserByEmail(email: string) {
+39     const response = await this.database`
+40         select id
+41         from users
+42         where email = ${email}
+43     `;
+44 
+45     return response.length > 0;
+46   }
+47 
+48   public async findUserById(id: number) {
+49     const response = await this.database`
+50         select id
+51         from users
+52         where id = ${id}
+53     `;
+54 
+55     return response.length > 0;
+56   }
+57 
+58   public async getAllUsers() {
+59     return this.database`
+60         select id, email
+61         from users
+62     `;
+63   }
+64 
+65   public async getUser(email: string) {
+66     const users = await this.database`
+67         select id, role, password
+68         from users
+69         where email = ${email}
+70     `;
+71 
+72     return users.at(0);
+73   }
+74 }
+75
+
+
+
+Додаток Б – Rest API для взаємодії серверної частини з клієнтами
+
+
+1 import Service from "@/service";
+2 import UserRepository from "@/repositories/user-repository";
+3 import { UserSignInRequestSchema, UserSignUpRequestSchema } from "@/schemas/user";
+4 import { hashPassword, verifyPassword } from "@/utils/crypto";
+5 import { generateAccessToken } from "@/utils/token";
+6 
+7 export default class AuthenticationService extends Service {
+8   public constructor(private readonly userRepository: UserRepository) {
+9     super();
+10   }
+11 
+12   public async signUpUser(data: any) {
+13     const validationResult = UserSignUpRequestSchema.safeParse(data);
+14     if (!validationResult.success) {
+15       return this.failure("A validation error occurred.");
+16     }
+17 
+18     const { name, email, password } = validationResult.data;
+19 
+20     const userExists = await this.userRepository.findUserByEmail(email);
+21     if (userExists) {
+22       return this.failure("User already exists.");
+23     }
+24 
+25     const hashedPassword = hashPassword(password);
+26 
+27     let user: any = undefined;
+28 
+29     try {
+30       user = await this.userRepository.createUser(name, email, hashedPassword);
+31     } catch (error) {
+32       return this.failure("An error occurred trying to create user.");
+33     }
+34 
+35     const accessToken = generateAccessToken(user.id, user.role);
+36 
+37     return this.success({
+38       id: user.id,
+39       accessToken: accessToken,
+40     });
+41   }
+42 
+43   public async signInUser(data: any) {
+44     const validationResult = UserSignInRequestSchema.safeParse(data);
+45     if (!validationResult.success) {
+46       return this.failure("A validation error occurred.");
+47     }
+48 
+49     const { email, password } = validationResult.data;
+50 
+51     let user = await this.userRepository.getUser(email);
+52     if (!user) {
+53       return this.failure("User does not exist.");
+54     }
+55 
+56     const passwordMatches = verifyPassword(password, user.password);
+57     if (!passwordMatches) {
+58       return this.failure("Invalid credentials.");
+59     }
+60 
+61     const accessToken = generateAccessToken(user.id, user.role);
+62 
+63     return this.success({
+64       id: user.id,
+65       accessToken: accessToken,
+66     });
+67   }
+68 }
